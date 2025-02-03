@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log Viewer</title>
+</head>
+<body>
+    <h1>Get Audit Logs</h1>
+    <label for="typeInput">Enter Type:</label>
+    <input type="text" id="typeInput" placeholder="Enter type here">
+    <button id="fetchBtn">Fetch Audit Log</button>
+    <h2>Response:</h2>
+    <textarea id="response" rows="30" cols="70" readonly></textarea>
+
+    <script>
+        document.getElementById("fetchBtn").addEventListener("click", async () => {
+            const type = document.getElementById("typeInput").value;
+            const responseArea = document.getElementById("response");
+
+            try {
+                const response = await fetch(`/get-dto?type=${encodeURIComponent(type)}`);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch data from the API.");
+                }
+                const data = await response.json();
+                responseArea.value = JSON.stringify(data, null, 2);
+            } catch (error) {
+                responseArea.value = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

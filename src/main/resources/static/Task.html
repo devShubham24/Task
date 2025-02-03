@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dynamic Charts page</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+  </head>
+  <body>
+    <div id="Linechart" style="width: 100%; height: 400px"></div>
+    <div
+      id="maxUserActions"
+      style="width: 800px; height: 400px; margin: 0 auto"
+    ></div>
+    <h1><center>Dynamic PieChart </center></h1>
+    <div id="PieChart"></div>
+    <h1><center>Dynamic Scatter plot Chart</center></h1>
+    <div id="ScatterPlot"></div>
+    <div id="MaxAuditLogs"></div>
+    <div id="UserGender"></div>
+    <div id="UserRoles"></div>
+    <div id ="Heatmap"></div>
+    <div id = "auditAction"></div>
+    <script type="text/javascript">
+      //-----------------------------------------------Line Chart-------------------------------------------------------------------------------
+      async function fetchLineChart() {
+        try {
+          // Fetch data from the API
+          const response = await fetch("http://localhost:8182/line-chart-data");
+          const dataset = await response.json();
+
+          // Extract unique event types for the y-axis categories
+          const eventTypes = [...new Set(dataset.map((data) => data.type))];
+
+          // Convert dataset into Highcharts data format
+          const chartData = dataset.map((data) => ({
+            x: new Date(data.createdAt).getTime(), // Convert date to timestamp
+            y: eventTypes.indexOf(data.type), // Map event type to an index
+          }));
+
+          // Render the chart
+          Highcharts.chart("Linechart", {
+            chart: {
+              type: "line", // Line graph instead of scatter
+            },
+            title: {
+              text: "Task -1 :Show Treads in diffrent audit type over the time ",
+            },
+            xAxis: {
+              type: "datetime", // Display timestamps properly
+              title: {
+                text: "CreatedAt",
+              },
+            },
+            yAxis: {
+              categories: eventTypes, // Show event names instead of numbers
+              title: {
+                text: "Type",
+              },
+            },
+            tooltip: {
+              formatter: function () {
+                return `<b>${this.series.yAxis.categories[this.point.y]}</b><br>
+                            Date: ${Highcharts.dateFormat(
+                              "%A, %b %e, %Y, %H:%M:%S",
+                              this.x
+                            )}`;
+              },
+            },
+            series: [
+              {
+                name: "Event Type",
+                data: chartData, // Use mapped data
+              },
+            ],
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+
+      // Call the function to fetch data and update the chart when the page loads
+      fetchLineChart();
+
+      //--------------------------------------------------------------------------------------------------------------------------------
+      // Task-2 Bar Chart
+      async function fetchBarChart() {
+        try {
+          // Fetch data from the API
+          const response = await fetch("http://localhost:8182/max-login-users");
+          const dataset = await response.json();
+
+          // Extract pdmpUserId and userCount from the dataset
+          const userIds = dataset.map((data) => data.pdmpUserId.toString()); // Convert IDs to strings
+          const userCounts = dataset.map((data) => data.userCount); // Extract user counts
+
+          // Update the Highcharts chart with the new data
+          Highcharts.chart("maxUserActions", {
+            chart: {
+              type: "column", // Vertical bar chart
+            },
+            title: {
+              text: "Task -2 :Identify which users are performing the most actions",
+            },
+            xAxis: {
+              categories: userIds, // Use pdmpUserIds as x-axis categories
+              title: {
+                text: "User IDs",
+              },
+            },
+            yAxis: {
+              title: {
+                text: "User Count",
+              },
+            },
+            series: [
+              {
+                name: "User Count",
+                data: userCounts, // Use user counts as the y-axis data (bar heights)
+              },
+            ],
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+
+      // Call the function to fetch data and update the chart when the page loads
+      fetchBarChart();
+
+      //------------------------------------------------------------------------------------------------------------------------------------------------------
+      async function fetchPieChart() {
+        try {
+          // Fetch the data from the API
+          const response = await fetch("http://localhost:8182/max-login-users");
+
+          // Check if the response is OK (status 200-299)
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+
+          // Parse the JSON data
+          const data = await response.json();
+
+          // Prepare the data in the required format for Highcharts
+          const chartData = data.map((item) => ({
+            name: `pdmpUserId ${item.pdmpUserId}`,
+            y: item.userCount,
+          }));
+
+          // Create the pie chart
+          Highcharts.chart("PieChart", {
+            chart: {
+              type: "pie",
+            },
+            title: {
+              text: "User Count Distribution by PDMP User ID",
+            },
+            subtitle: {
+              text: "Data fetched from API: http://localhost:8182/max-login-users",
+            },
+            series: [
+              {
+                name: "User Count",
+                colorByPoint: true,
+                data: chartData, // Use the prepared data
+              },
+            ],
+          });
+        } catch (error) {
+          // Log any errors that occur during the fetch or chart creation
+          console.error("Error fetching data:", error);
+        }
+      }
+
+      // Call the function to fetch data and create the chart
+      fetchPieChart();
+      //------------------------------------------------------------------------------------------------------------------------------------------------------
+      async function fetchScatterPlotChart() {
+        try {
+          // Fetch data from the API
+          const response = await fetch("http://localhost:8182/max-login-users");
+
+          // Check if the response is successful
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+
+          // Parse the response data to JSON
+          const data = await response.json();
+          const chartData = data.map((item) => [
+            item.pdmpUserId, // X-axis value (pdmpUserId)
+            item.userCount, // Y-axis value (userCount)
+          ]);
+
+          // Create the scatter plot using Highcharts
+          Highcharts.chart("ScatterPlot", {
+            chart: {
+              type: "scatter", // Set the chart type to scatter
+              zoomType: "xy", // Allow zooming in both X and Y axes
+            },
+            title: {
+              text: "Scatter Plot - User Count vs PDMP User ID",
+            },
+            xAxis: {
+              title: {
+                text: "PDMP User ID",
+              },
+              min: 0, // Set the minimum value of the X-axis to 0
+            },
+            yAxis: {
+              title: {
+                text: "User Count",
+              },
+            },
+            series: [
+              {
+                name: "User Data",
+                color: "rgba(223, 83, 83, .5)", // Color for the scatter plot points
+                data: chartData, // Data for the scatter plot
+              },
+            ],
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+
+      // Call the function to fetch data and create the chart
+      fetchScatterPlotChart();
+//-----------------------------------------------------------------------------------------------------------------------------------------------
+async function fetchAuditLogData() {
+    try {
+        const response = await fetch('http://localhost:8182/Audit-log-count'); // Fetch API data
+        const data = await response.json(); // Convert to JSON
+
+        // Step 2: Extract X-axis (auditSource) and Y-axis (auditlogsCount)
+        const categories = data.map(item => item.auditSource); // X-axis: Audit Source
+        const counts = data.map(item => item.auditlogsCount); // Y-axis: Count of Audit Logs
+
+        // Step 3: Call function to render the chart
+        renderChart(categories, counts);
+    } catch (error) {
+        console.error('Error fetching audit log data:', error);
+    }
+}
+
+// Step 4: Function to render Highcharts bar chart
+function renderChart(categories, counts) {
+    Highcharts.chart('MaxAuditLogs', {
+        chart: {
+            type: 'bar'
+        },
+        title: {
+            text: 'Task 5: identify which component or services generate the most Audit Logs'
+        },
+        xAxis: {
+            categories: categories,
+            title: {
+                text: 'Audit Source'
+            },
+            labels: {
+                style: {
+                    fontSize: '12px',
+                    wordWrap: 'break-word',
+                    width: '200px'
+                }
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Count of Audit Logs',
+                align: 'high'
+            },
+            labels: {
+                overflow: 'justify'
+            }
+        },
+        plotOptions: {
+            bar: {
+                dataLabels: {
+                    enabled: true
+                }
+            }
+        },
+        series: [{
+            name: 'Count of Audit Logs',
+            data: counts
+        }]
+    });
+}
+
+// Step 5: Call function to fetch data and render chart
+fetchAuditLogData();
+//  task -6 ----------------------------------------------------------------------------------------------------------------------------------------
+   async function fetchChartData() {
+            try {
+                const response = await fetch('http://localhost:8182/get-Task-data');
+                const data = await response.json();
+
+                // Process data: map to store auditAction, gender and count occurrences
+                let auditActionGender = data.map(item => ({
+                    auditAction: item.auditAction,
+                    gender: item.gender
+                }));
+
+                // Get unique auditAction names and count their occurrences
+                let auditActionCounts = [...new Set(auditActionGender.map(item => item.auditAction))].map(action => {
+                    let count = auditActionGender.filter(item => item.auditAction === action).length;
+                    let genders = auditActionGender.filter(item => item.auditAction === action).map(item => item.gender);
+                    return {
+                        name: action,
+                        y: count,
+                        gender: genders.join(", "), // Store genders as a string
+                        drilldown: action
+                    };
+                });
+
+                // Drilldown data with combined auditAction + gender (e.g., "USER_MODIFIED (Female)")
+                let drilldownSeries = auditActionGender.map(item => ({
+                    name: item.auditAction,
+                    id: item.auditAction,
+                    data: [[`${item.auditAction} (${item.gender})`, 1]]
+                }));
+
+                // Render Pie Chart
+                Highcharts.chart('UserGender', {
+                    chart: { type: 'pie' },
+                    title: { text: 'Task -6: Distribution of Audit Actions  by  gender' },
+                    tooltip: {
+                        formatter: function () {
+                            // Show auditAction and gender on hover
+                            return `<b>${this.point.name} (${this.point.gender})</b>`;
+                        }
+                    },
+                    series: [{
+                        name: 'Audit Actions',
+                        data: auditActionCounts,
+                        colorByPoint: true
+                    }],
+                    drilldown: { series: drilldownSeries }
+                });
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        fetchChartData();
+        
+ //-----------------------------------------------------------------------Task -4 -------------------------------------------------------
+ document.addEventListener("DOMContentLoaded", function () {
+    // Load necessary Highcharts modules
+    const script1 = document.createElement("script");
+    script1.src = "https://code.highcharts.com/modules/heatmap.js";
+    document.head.appendChild(script1);
+
+    const script2 = document.createElement("script");
+    script2.src = "https://code.highcharts.com/modules/exporting.js";
+    document.head.appendChild(script2);
+
+    script2.onload = function () {
+        fetchAuditData(); // Fetch data and render chart once scripts are loaded
+    };
+});
+
+async function fetchAuditData() {
+    try {
+        const response = await fetch("http://localhost:8182/line-chart-data");
+        const rawData = await response.json();
+
+        // Process the data into heatmap format
+        const heatmapData = processAuditData(rawData);
+
+        // Render the heatmap chart
+        renderHeatmap(heatmapData);
+
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+}
+
+// Function to process API data into heatmap format
+function processAuditData(data) {
+    let logsMap = new Map();
+
+    data.forEach(item => {
+        let date = new Date(item.createdAt);
+        let hour = date.getHours(); // Extract hour of the day (0-23)
+        let day = date.getDay();    // Extract day of the week (0=Sunday, 6=Saturday)
+
+        let key = `${hour}-${day}`;
+        logsMap.set(key, (logsMap.get(key) || 0) + 1);
+    });
+
+    // Convert map to Highcharts heatmap format [x (hour), y (day), value (count)]
+    return [...logsMap.entries()].map(([key, count]) => {
+        let [hour, day] = key.split("-").map(Number);
+        return [hour, day, count];
+    });
+}
+
+// Function to format hours into 12-hour AM/PM format
+function formatHour(hour) {
+    let period = hour >= 12 ? "PM" : "AM";
+    let formattedHour = hour % 12 || 12; // Convert 0 to 12 for 12AM, and 12 remains as it is
+    return `${formattedHour} ${period}`;
+}
+
+// Function to render the heatmap chart
+function renderHeatmap(heatmapData) {
+    Highcharts.chart("Heatmap", {
+        chart: {
+            type: "heatmap",
+            plotBorderWidth: 1
+        },
+        title: {
+            text: "Task -4: Peak Activity Time for Audit Logs"
+        },
+        xAxis: {
+            categories: [...Array(24).keys()].map(formatHour), // Convert 0-23 to AM/PM format
+            title: { text: "Time of the Day (AM/PM)" }
+        },
+        yAxis: {
+            categories: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            title: { text: "Day of the Week" }
+        },
+        colorAxis: {
+            min: 0,
+            minColor: "#FFFFFF",
+            maxColor: "#FF5733"
+        },
+        series: [{
+            name: "Audit Log Activity",
+            borderWidth: 1,
+            data: heatmapData,
+            dataLabels: {
+                enabled: true,
+                color: "#000000"
+            }
+        }],
+        tooltip: {
+            formatter: function () {
+                return `<b>Logs:</b> ${this.point.value} at <b>${this.series.xAxis.categories[this.point.x]}</b> on <b>${this.series.yAxis.categories[this.point.y]}</b>`;
+            }
+        }
+    });
+}
+//----------------------------------------------------Task -3------------------------------------------------------------------------------------------------
+ document.addEventListener("DOMContentLoaded", function () {
+            fetch("http://localhost:8182/get-Task-data")
+                .then(response => response.json())
+                .then(data => {
+                    // Extract only `auditAction` and `userRoles`
+                    let actionCounts = {};
+
+                    data.forEach(item => {
+                        let action = item.auditAction;
+                        let role = item.userRoles;
+
+                        // Create key using both values (optional)
+                        let key = `${action} (${role})`;
+
+                        // Count occurrences
+                        actionCounts[key] = (actionCounts[key] || 0) + 1;
+                    });
+
+                    // Convert data for Highcharts
+                    let chartData = Object.entries(actionCounts).map(([name, count]) => ({
+                        name: name,
+                        y: count
+                    }));
+
+                    // Render Pie Chart
+                    Highcharts.chart("auditAction", {
+                        chart: {
+                            type: "pie"
+                        },
+                        title: {
+                            text: "Task -3: Distribution of Audit Actions across diffrent User Roles"
+                        },
+                        series: [{
+                            name: "Count",
+                            colorByPoint: true,
+                            data: chartData
+                        }]
+                    });
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        });
+  </script>
+  </body>
+</html>
