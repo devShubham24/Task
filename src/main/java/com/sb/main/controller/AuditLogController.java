@@ -58,12 +58,14 @@ public class AuditLogController {
     	  try { a=20;
     		    b=2;
     		    c=a/b;
+    		    log.info("hallo");
     		  log.warn("Do not divide by zero");
     		  log.info("Your Arithmatics operation result is:"+c);
     	  }catch(Exception e) {
     		  log.error("Divide error");
     	  }
 		return "Wellcome12345";
+		
     	  
     }
       
